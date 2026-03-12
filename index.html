@@ -202,7 +202,7 @@
 
   <div id="main">
     <!-- SUB VIEW -->
-    <div class="view active" id="view-sub">
+    <div class="view" id="view-sub">
       <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('chores')" id="tab-chores">🧹 Chores</button>
         <button class="tab-btn" onclick="switchTab('rewards')" id="tab-rewards">🎁 Rewards</button>
@@ -378,8 +378,10 @@ function pinFail(msg){
 // ENTER APP
 async function enterApp(){
   showScreen('loading');
-  document.getElementById('view-sub').classList.toggle('active',currentRole==='sub');
-  document.getElementById('view-mistress').classList.toggle('active',currentRole==='mistress');
+  document.getElementById('view-sub').classList.remove('active');
+  document.getElementById('view-mistress').classList.remove('active');
+  if(currentRole==='sub') document.getElementById('view-sub').classList.add('active');
+  else document.getElementById('view-mistress').classList.add('active');
   document.getElementById('role-badge').textContent=currentRole==='sub'?'💋 Sub':'👑 Mistress';
   await loadAll();
   showScreen('app');
