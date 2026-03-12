@@ -388,22 +388,33 @@ async function enterApp(){
 // DATA
 async function loadAll(){
   try{
-    const[s,c,r,l,q,cr]=await Promise.all([
+    // Load core data first — these must work
+    const[s,c,r,l,q]=await Promise.all([
       sb.from("devotion_state").select("*").eq("id","main").single(),
       sb.from("devotion_chores").select("*").order("id"),
       sb.from("devotion_rewards").select("*").order("id"),
       sb.from("devotion_log").select("*").order("created_at",{ascending:false}).limit(100),
-      sb.from("devotion_requests").select("*").order("created_at",{ascending:false}),
-      sb.from("devotion_chore_requests").select("*").order("created_at",{ascending:false})
+      sb.from("devotion_requests").select("*").order("created_at",{ascending:false})
     ]);
     if(s.data) state.points=s.data.points;
     if(c.data) state.chores=c.data;
     if(r.data) state.rewards=r.data;
     if(l.data) state.log=l.data;
     if(q.data) state.requests=q.data;
-    if(cr.data)state.choreRequests=cr.data;
-    renderAll();
-  }catch(e){showToast("Sync failed","error");}
+  }catch(e){
+    showToast("Sync failed — check connection","error");
+    setSyncStatus("error");
+    return;
+  }
+  // Load chore requests separately so missing table doesn't break everything
+  try{
+    const cr=await sb.from("devotion_chore_requests").select("*").order("created_at",{ascending:false});
+    if(cr.data) state.choreRequests=cr.data;
+  }catch(e){
+    state.choreRequests=[];
+    // Table may not exist yet — that's okay, chore approval just won't show
+  }
+  renderAll();
 }
 async function refreshAll(){setSyncStatus("syncing...");await loadAll();setSyncStatus("synced");showToast("Synced! 🖤");}
 function setSyncStatus(s){const el=document.getElementById("sync-indicator");const c={synced:"#3a0f18","syncing...":"#6b2030",error:"#ff0a54"};el.textContent="● "+s;el.style.color=c[s]||"#3a0f18";}
