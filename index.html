@@ -451,11 +451,37 @@ function switchTab(tab){
   if(tab==="log")renderLog();if(tab==="rewards"){renderCatFilter();renderRewards();}
 }
 function switchMTab(tab){
-  ["requests","manage-chores","manage-rewards","settings"].forEach(t=>{document.getElementById("mtab-"+t).classList.toggle("active",t===tab);document.getElementById("mcontent-"+t).classList.toggle("active",t===tab);});
+  ["requests","manage-chores","manage-rewards","settings"].forEach(t=>{
+    document.getElementById("mtab-"+t).classList.toggle("active",t===tab);
+    document.getElementById("mcontent-"+t).classList.toggle("active",t===tab);
+  });
+  if(tab==="requests")renderRequests();
+  if(tab==="manage-chores")renderManageChores();
+  if(tab==="manage-rewards")renderManageRewards();
 }
 
 // RENDER ALL
-function renderAll(){updatePoints();renderChores();renderCatFilter();renderRewards();renderLog();renderRequests();renderManageChores();renderManageRewards();}
+function renderAll(){
+  updatePoints();
+  updateMistressBadge();
+  renderChores();
+  renderCatFilter();
+  renderRewards();
+  renderLog();
+  // Only render the active mistress tab to avoid stale data
+  if(currentRole==="mistress"){
+    const activeTab=document.querySelector("#view-mistress .tab-content.active");
+    if(activeTab){
+      const id=activeTab.id;
+      if(id==="mcontent-requests")renderRequests();
+      else if(id==="mcontent-manage-chores")renderManageChores();
+      else if(id==="mcontent-manage-rewards")renderManageRewards();
+      else renderRequests(); // default
+    } else {
+      renderRequests();
+    }
+  }
+}
 function updatePoints(){document.getElementById("points-val").textContent=state.points;}
 
 // CHORES - sub submits for approval
@@ -548,15 +574,18 @@ function renderLog(){
 }
 
 // REQUESTS - mistress sees BOTH chore completions AND reward requests
+function updateMistressBadge(){
+  const pendingChores=state.choreRequests.filter(r=>r.status==="pending").length;
+  const pendingRewards=state.requests.filter(r=>r.status==="pending").length;
+  const total=pendingChores+pendingRewards;
+  document.getElementById("btn-mistress").textContent="👑 Mistress"+(total>0?` (${total})`:"");
+}
+
 function renderRequests(){
   const el=document.getElementById("requests-list");
-  const pendingChores=state.choreRequests.filter(r=>r.status==="pending");
   const allChores=state.choreRequests;
   const allRewards=state.requests;
-
-  // Count total pending
-  const totalPending=pendingChores.length+allRewards.filter(r=>r.status==="pending").length;
-  document.getElementById("btn-mistress").textContent="👑 Mistress"+(totalPending>0?` (${totalPending})`:"");
+  updateMistressBadge();
 
   if(!allChores.length&&!allRewards.length){el.innerHTML='<div class="empty">No requests yet 🖤</div>';return;}
 
